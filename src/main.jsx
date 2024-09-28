@@ -8,6 +8,7 @@ import "./index.css";
 import Snake from "./games/snake";
 import App from "./App";
 import Platformer from "./games/Platformer";
+import Bubble_Popper from "./games/Bubble_Popper";
 
 const router = createBrowserRouter([
   {
@@ -22,10 +23,10 @@ const router = createBrowserRouter([
     path: "/platformer",
     element: <Platformer/>,
   },
-  // {
-  //   path: "/",
-  //   element: <App/>,
-  // },
+  {
+    path: "/bubble_popper",
+    element: <Bubble_Popper/>,
+  },
   // {
   //   path: "/",
   //   element: <App/>,
