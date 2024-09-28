@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 const Bubble_Popper = () => {
   const canvasRef = useRef(null);
@@ -9,6 +9,9 @@ const Bubble_Popper = () => {
   const scoreRef = useRef(0);
   const bubblePop1Ref = useRef(null);
   const bubblePop2Ref = useRef(null);
+  const userInteractedRef = useRef(false);
+  const playerLeftRef = useRef(null);
+  const playerRightRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -17,9 +20,11 @@ const Bubble_Popper = () => {
     canvas.height = 500;
     const canvasPosition = canvas.getBoundingClientRect();
 
-    // Create audio elements
-    bubblePop1Ref.current = new Audio("/public/audio/bubbles-single1.wav");
+    bubblePop1Ref.current = new Audio("/audio/bubbles-single1.wav");
     bubblePop2Ref.current = new Audio("/audio/bubbles-single2.wav");
+
+    bubblePop1Ref.current.load();
+    bubblePop2Ref.current.load();
 
     const handleMouseMove = (event) => {
       mouseRef.current.x = event.clientX - canvasPosition.left;
@@ -27,6 +32,7 @@ const Bubble_Popper = () => {
     };
 
     const handleMouseDown = () => {
+      userInteractedRef.current = true;
       mouseRef.current.click = true;
     };
 
@@ -38,33 +44,36 @@ const Bubble_Popper = () => {
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mouseup', handleMouseUp);
 
+    playerLeftRef.current = new Image();
+    playerLeftRef.current.src = "/images/fish_swim_left.png";
+
+    playerRightRef.current = new Image();
+    playerRightRef.current.src = "/images/fish_swim_right.png";
+
     class Player {
       constructor() {
         this.x = canvas.width / 2;
         this.y = canvas.height / 2;
         this.radius = 50;
+        this.spriteWidth = 498;
+        this.spriteHeight = 327;
+        this.angle = 0;
       }
 
       update() {
         const dx = this.x - mouseRef.current.x;
         const dy = this.y - mouseRef.current.y;
+        this.angle = Math.atan2(dy, dx);
         if (mouseRef.current.x !== this.x) this.x -= dx / 20;
         if (mouseRef.current.y !== this.y) this.y -= dy / 20;
       }
 
       draw() {
-        if (mouseRef.current.click) {
-          ctx.lineWidth = 0.2;
-          ctx.beginPath();
-          ctx.moveTo(this.x, this.y);
-          ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
-          ctx.stroke();
-        }
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.closePath();
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.drawImage(playerLeftRef.current, 0, 0, this.spriteWidth, this.spriteHeight, -this.spriteWidth / 8, -this.spriteHeight / 8, this.spriteWidth / 4, this.spriteHeight / 4);
+        ctx.restore();
       }
     }
 
@@ -76,7 +85,8 @@ const Bubble_Popper = () => {
         this.y = canvas.height + 100;
         this.radius = 50;
         this.speed = Math.random() * 5 + 1;
-        this.distance;
+        this.distance = 0;
+        this.counted = false;
         this.sound = Math.random() <= 0.5 ? 'sound1' : 'sound2';
       }
 
@@ -106,16 +116,19 @@ const Bubble_Popper = () => {
         bubblesArrayRef.current[i].draw();
 
         if (bubblesArrayRef.current[i].distance < bubblesArrayRef.current[i].radius + player.radius) {
-          console.log('collision');
-          scoreRef.current++;
-          // Play the appropriate sound
-          if (bubblesArrayRef.current[i].sound === 'sound1') {
-            bubblePop1Ref.current.play();
-          } else {
-            bubblePop2Ref.current.play();
+          if (!bubblesArrayRef.current[i].counted) {
+            if (userInteractedRef.current) {
+              if (bubblesArrayRef.current[i].sound === 'sound1') {
+                bubblePop1Ref.current.play().catch(e => console.error("Error playing sound:", e));
+              } else {
+                bubblePop2Ref.current.play().catch(e => console.error("Error playing sound:", e));
+              }
+            }
+            scoreRef.current++;
+            bubblesArrayRef.current[i].counted = true;
+            bubblesArrayRef.current.splice(i, 1);
+            i--;
           }
-          bubblesArrayRef.current.splice(i, 1);
-          i--;
         }
       }
       for (let i = 0; i < bubblesArrayRef.current.length; i++) {
@@ -131,8 +144,12 @@ const Bubble_Popper = () => {
       handleBubbles();
       player.update();
       player.draw();
+
+      // Set font style and size for the score
+      ctx.font = "24px 'Press Start 2P', cursive"; // Use the gaming font with increased size
       ctx.fillStyle = 'black';
       ctx.fillText('Score: ' + scoreRef.current, 10, 50);
+
       gameFrameRef.current++;
       requestRef.current = requestAnimationFrame(animate);
     };
