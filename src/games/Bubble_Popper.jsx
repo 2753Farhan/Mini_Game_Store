@@ -12,12 +12,15 @@ const Bubble_Popper = () => {
   const userInteractedRef = useRef(false);
   const playerLeftRef = useRef(null);
   const playerRightRef = useRef(null);
+  const backgroundRef = useRef(null); // Background image reference
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 500;
+    let canvasWidth = window.innerWidth * 0.8;
+    let canvasHeight = window.innerHeight * 0.8;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     const canvasPosition = canvas.getBoundingClientRect();
 
     bubblePop1Ref.current = new Audio("/audio/bubbles-single1.wav");
@@ -25,6 +28,10 @@ const Bubble_Popper = () => {
 
     bubblePop1Ref.current.load();
     bubblePop2Ref.current.load();
+
+    // Load the background image
+    backgroundRef.current = new Image();
+    backgroundRef.current.src = '/images/background.png'; // Path to the background image
 
     const handleMouseMove = (event) => {
       mouseRef.current.x = event.clientX - canvasPosition.left;
@@ -40,6 +47,14 @@ const Bubble_Popper = () => {
       mouseRef.current.click = false;
     };
 
+    const resizeCanvas = () => {
+      canvasWidth = window.innerWidth * 0.8;
+      canvasHeight = window.innerHeight * 0.8;
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+    };
+
+    window.addEventListener('resize', resizeCanvas);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mouseup', handleMouseUp);
@@ -49,6 +64,12 @@ const Bubble_Popper = () => {
 
     playerRightRef.current = new Image();
     playerRightRef.current.src = "/images/fish_swim_right.png";
+
+    // Draw the background image
+    function handleBackground() {
+      ctx.drawImage(backgroundRef.current, 0, 0, canvas.width, canvas.height);
+    }
+      
 
     class Player {
       constructor() {
@@ -141,11 +162,14 @@ const Bubble_Popper = () => {
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Call handleBackground to draw the background before other elements
+      handleBackground();
+
       handleBubbles();
       player.update();
       player.draw();
 
-      // Set font style and size for the score
       ctx.font = "24px 'Press Start 2P', cursive"; // Use the gaming font with increased size
       ctx.fillStyle = 'black';
       ctx.fillText('Score: ' + scoreRef.current, 10, 50);
@@ -160,14 +184,19 @@ const Bubble_Popper = () => {
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(requestRef.current);
     };
   }, []);
 
   return (
-    <div>
-      <canvas ref={canvasRef} style={{ border: '4px solid black' }} />
-    </div>
+<div >
+  <div className="">
+  <canvas ref={canvasRef} className="border-4 border-black flex justify-center items-center bg-gradient-to-b from-blue-500 via-blue-300 to-cyan-500" />
+  </div>
+
+</div>
+
   );
 };
 
